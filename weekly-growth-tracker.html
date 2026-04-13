@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weekly Growth Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F4F2ED;
+    --surface: #FFFFFF;
+    --border: #E2DDD6;
+    --text: #1C1917;
+    --muted: #78716C;
+    --accent: #1D9E75;
+    --warn: #EF9F27;
+    --danger: #E24B4A;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); padding: 2rem 1rem; min-height: 100vh; }
+  .container { max-width: 700px; margin: 0 auto; }
+
+  header { margin-bottom: 2rem; }
+  header h1 { font-size: 24px; font-weight: 500; letter-spacing: -0.02em; }
+  header p { font-size: 13px; color: var(--muted); margin-top: 4px; font-family: 'DM Mono', monospace; }
+
+  .tabs { display: flex; gap: 4px; background: var(--border); padding: 4px; border-radius: 10px; margin-bottom: 1.5rem; width: fit-content; }
+  .tab { padding: 6px 18px; border-radius: 8px; font-size: 13px; cursor: pointer; border: none; background: none; color: var(--muted); font-family: 'DM Sans', sans-serif; font-weight: 400; transition: all 0.15s; }
+  .tab.active { background: var(--surface); color: var(--text); font-weight: 500; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .week-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+  .week-label { font-size: 18px; font-weight: 500; letter-spacing: -0.01em; }
+  .week-nav { display: flex; gap: 6px; }
+  .week-nav button { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 6px 14px; font-size: 13px; cursor: pointer; font-family: 'DM Sans', sans-serif; color: var(--text); transition: background 0.1s; }
+  .week-nav button:hover { background: var(--bg); }
+
+  .section-label { font-size: 10px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 1.75rem; margin-bottom: 10px; font-family: 'DM Mono', monospace; }
+
+  .skills-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .skill-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .skill-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .skill-name { font-size: 13px; font-weight: 500; }
+  .skill-lbl { font-size: 10px; color: var(--muted); font-family: 'DM Mono', monospace; }
+  .dots { display: flex; gap: 6px; }
+  .dot { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--border); cursor: pointer; transition: all 0.12s; flex-shrink: 0; }
+  .dot:hover { border-color: var(--muted); transform: scale(1.1); }
+  .dot.f1 { background: var(--danger); border-color: var(--danger); }
+  .dot.f2, .dot.f3 { background: var(--warn); border-color: var(--warn); }
+  .dot.f4, .dot.f5 { background: var(--accent); border-color: var(--accent); }
+
+  .reflect-group { display: flex; flex-direction: column; gap: 8px; }
+  textarea { width: 100%; border: 1px solid var(--border); border-radius: 10px; padding: 11px 14px; font-size: 14px; font-family: 'DM Sans', sans-serif; color: var(--text); background: var(--surface); resize: vertical; min-height: 72px; line-height: 1.6; transition: border 0.15s; }
+  textarea::placeholder { color: var(--muted); }
+  textarea:focus { outline: none; border-color: #a8a29e; }
+
+  .challenge-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-top: 10px; }
+  .challenge-text { font-size: 14px; line-height: 1.65; color: var(--text); }
+  .challenge-check { display: flex; align-items: center; gap: 10px; margin-top: 12px; cursor: pointer; user-select: none; }
+  .checkbox { width: 20px; height: 20px; border: 1.5px solid var(--border); border-radius: 5px; background: var(--bg); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
+  .checkbox.done { background: var(--accent); border-color: var(--accent); }
+  .checkbox.done::after { content: ''; display: block; width: 5px; height: 9px; border: 2px solid white; border-top: none; border-left: none; transform: rotate(45deg) translate(-1px, -1px); }
+  .check-label { font-size: 13px; color: var(--muted); }
+
+  .save-btn { margin-top: 1.5rem; width: 100%; padding: 11px; background: var(--text); color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: opacity 0.15s; }
+  .save-btn:hover { opacity: 0.85; }
+  .save-confirm { font-size: 13px; color: var(--accent); text-align: center; margin-top: 8px; min-height: 20px; font-family: 'DM Mono', monospace; }
+
+  .trend-header { display: flex; gap: 6px; padding-left: 154px; margin-bottom: 6px; }
+  .trend-wk { font-size: 9px; color: var(--muted); font-family: 'DM Mono', monospace; flex: 1; text-align: center; }
+  .trend-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--border); }
+  .trend-row:last-child { border-bottom: none; }
+  .trend-name { font-size: 12px; color: var(--text); width: 146px; flex-shrink: 0; }
+  .trend-bars { flex: 1; display: flex; gap: 4px; align-items: center; }
+  .trend-bar { height: 16px; border-radius: 4px; flex: 1; }
+  .trend-avg { font-size: 11px; color: var(--muted); width: 28px; text-align: right; font-family: 'DM Mono', monospace; }
+
+  .empty { font-size: 14px; color: var(--muted); padding: 1.5rem 0; }
+
+  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 1.5rem; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .stat-label { font-size: 10px; color: var(--muted); font-family: 'DM Mono', monospace; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .stat-value { font-size: 22px; font-weight: 500; letter-spacing: -0.02em; }
+  .stat-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Weekly Growth Tracker</h1>
+    <p>Prioritization · Time management · Stakeholder skills</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('weekly')">This week</button>
+    <button class="tab" onclick="switchTab('progress')">Progress</button>
+  </div>
+
+  <!-- WEEKLY PANEL -->
+  <div id="panel-weekly" class="panel active">
+    <div class="week-header">
+      <span class="week-label" id="week-label"></span>
+      <div class="week-nav">
+        <button onclick="changeWeek(-1)">← Prev</button>
+        <button onclick="changeWeek(1)">Next →</button>
+      </div>
+    </div>
+
+    <div class="section-label">Skills — rate your week (1 = struggled · 5 = nailed it)</div>
+    <div class="skills-grid" id="skills-grid"></div>
+
+    <div class="section-label">Reflection</div>
+    <div class="reflect-group">
+      <textarea id="win-text" placeholder="Biggest win this week?"></textarea>
+      <textarea id="struggle-text" placeholder="What did you struggle with?"></textarea>
+      <textarea id="next-text" placeholder="One concrete thing you'll do differently next week..."></textarea>
+    </div>
+
+    <div class="section-label">Weekly challenge</div>
+    <div class="challenge-card">
+      <div class="challenge-text" id="challenge-display"></div>
+      <div class="challenge-check" onclick="toggleChallenge()">
+        <div class="checkbox" id="cb"></div>
+        <span class="check-label">Completed this week</span>
+      </div>
+    </div>
+
+    <button class="save-btn" onclick="saveWeek()">Save this week</button>
+    <div class="save-confirm" id="save-confirm"></div>
+  </div>
+
+  <!-- PROGRESS PANEL -->
+  <div id="panel-progress" class="panel">
+    <div class="section-label">Skill trend — last 6 weeks</div>
+    <div id="trend-header-row" class="trend-header"></div>
+    <div id="trend-container"><p class="empty">No data yet — fill in a few weeks first.</p></div>
+
+    <div class="section-label">Summary stats</div>
+    <div class="stats-row" id="stats-row">
+      <div class="stat-card"><div class="stat-label">Weeks logged</div><div class="stat-value" id="stat-weeks">0</div><div class="stat-sub">total entries</div></div>
+      <div class="stat-card"><div class="stat-label">Best skill</div><div class="stat-value" id="stat-best" style="font-size:15px;margin-top:4px;">—</div><div class="stat-sub" id="stat-best-avg">avg —</div></div>
+      <div class="stat-card"><div class="stat-label">Focus area</div><div class="stat-value" id="stat-focus" style="font-size:15px;margin-top:4px;">—</div><div class="stat-sub" id="stat-focus-avg">needs work</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SKILLS = [
+  {id:'prio', label:'Prioritization'},
+  {id:'time', label:'Time management'},
+  {id:'stake', label:'Stakeholder comms'},
+  {id:'pres', label:'Presentations'},
+  {id:'lofi', label:'Lofi / flow first'},
+  {id:'doc', label:'Documentation'},
+];
+
+const CHALLENGES = [
+  'Time-box one task today: set a timer, stop when it rings.',
+  'Do a lofi wireframe before opening your design tool.',
+  'Send one proactive stakeholder update before they ask.',
+  'Cut a presentation by 30% — remove slides ruthlessly.',
+  'Write short docs for one thing you finished this week.',
+  'List all tasks, estimate each, then block them in your calendar.',
+  'Run a 5-min post-launch check on something you shipped.',
+  'Bring a lofi to your manager before going high-fidelity.',
+  'Set your own deadline for your most ambiguous task.',
+  'Define the one metric that matters most for your current project.',
+];
+
+const LBLS = ['', 'Struggled', 'Below avg', 'On track', 'Good', 'Nailed it'];
+
+let cur = weekKey(new Date());
+let data = JSON.parse(localStorage.getItem('wgt') || '{}');
+
+function weekKey(d) {
+  const x = new Date(d); x.setHours(0,0,0,0);
+  x.setDate(x.getDate() - x.getDay() + 1);
+  return x.toISOString().split('T')[0];
+}
+function weekLabel(k) {
+  const d = new Date(k + 'T00:00:00');
+  return 'Week of ' + d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+}
+function weekShort(k) {
+  const d = new Date(k + 'T00:00:00');
+  return d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+}
+function chalIdx(k) {
+  let h = 0; for (let c of k) h = (h * 31 + c.charCodeAt(0)) % CHALLENGES.length; return h;
+}
+
+function changeWeek(dir) {
+  saveMem();
+  const d = new Date(cur + 'T00:00:00');
+  d.setDate(d.getDate() + dir * 7);
+  cur = weekKey(d); load();
+}
+
+function saveMem() {
+  const sc = {};
+  SKILLS.forEach(s => {
+    const el = document.querySelector('[data-s="' + s.id + '"][data-on="1"]');
+    sc[s.id] = parseInt(el?.dataset.v || 0);
+  });
+  data[cur] = {
+    sc,
+    win: document.getElementById('win-text').value,
+    struggle: document.getElementById('struggle-text').value,
+    next: document.getElementById('next-text').value,
+    done: document.getElementById('cb').classList.contains('done'),
+    ci: data[cur]?.ci ?? chalIdx(cur),
+  };
+}
+
+function load() {
+  document.getElementById('week-label').textContent = weekLabel(cur);
+  const d = data[cur] || {};
+  const ci = d.ci ?? chalIdx(cur);
+  if (!data[cur]) data[cur] = { sc: {}, ci };
+  document.getElementById('challenge-display').textContent = CHALLENGES[ci];
+  document.getElementById('cb').className = 'checkbox' + (d.done ? ' done' : '');
+  document.getElementById('win-text').value = d.win || '';
+  document.getElementById('struggle-text').value = d.struggle || '';
+  document.getElementById('next-text').value = d.next || '';
+  document.getElementById('save-confirm').textContent = '';
+  SKILLS.forEach(s => {
+    const v = d.sc?.[s.id] || 0;
+    for (let i = 1; i <= 5; i++) {
+      const dot = document.querySelector('[data-s="' + s.id + '"][data-v="' + i + '"]');
+      if (dot) { dot.dataset.on = i <= v ? '1' : '0'; dot.className = 'dot' + (i <= v ? ' f' + v : ''); }
+    }
+    const lbl = document.getElementById('l-' + s.id);
+    if (lbl) lbl.textContent = v ? LBLS[v] : '—';
+  });
+}
+
+function buildGrid() {
+  const g = document.getElementById('skills-grid'); g.innerHTML = '';
+  SKILLS.forEach(s => {
+    const c = document.createElement('div'); c.className = 'skill-card';
+    c.innerHTML = '<div class="skill-top"><span class="skill-name">' + s.label + '</span><span class="skill-lbl" id="l-' + s.id + '">—</span></div><div class="dots" id="d-' + s.id + '"></div>';
+    g.appendChild(c);
+    const de = document.getElementById('d-' + s.id);
+    for (let i = 1; i <= 5; i++) {
+      const dot = document.createElement('div'); dot.className = 'dot';
+      dot.dataset.s = s.id; dot.dataset.v = i; dot.dataset.on = '0';
+      dot.title = LBLS[i]; dot.onclick = () => setScore(s.id, i);
+      de.appendChild(dot);
+    }
+  });
+}
+
+function setScore(sid, val) {
+  const ex = parseInt(document.querySelector('[data-s="' + sid + '"][data-on="1"]')?.dataset.v || 0);
+  const nv = ex === val ? 0 : val;
+  for (let i = 1; i <= 5; i++) {
+    const d = document.querySelector('[data-s="' + sid + '"][data-v="' + i + '"]');
+    if (d) { d.dataset.on = i <= nv ? '1' : '0'; d.className = 'dot' + (i <= nv ? ' f' + nv : ''); }
+  }
+  const l = document.getElementById('l-' + sid);
+  if (l) l.textContent = nv ? LBLS[nv] : '—';
+}
+
+function toggleChallenge() { document.getElementById('cb').classList.toggle('done'); }
+
+function saveWeek() {
+  saveMem();
+  localStorage.setItem('wgt', JSON.stringify(data));
+  const c = document.getElementById('save-confirm');
+  c.textContent = '✓ Saved'; setTimeout(() => c.textContent = '', 2000);
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ['weekly','progress'][i] === tab));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  if (tab === 'progress') renderProgress();
+}
+
+function barColor(v) { return v >= 4 ? '#1D9E75' : v >= 3 ? '#EF9F27' : '#E24B4A'; }
+
+function renderProgress() {
+  const weeks = Object.keys(data).sort().slice(-6);
+  const container = document.getElementById('trend-container');
+  const hdr = document.getElementById('trend-header-row');
+
+  if (!weeks.length) {
+    container.innerHTML = '<p class="empty">No data yet — fill in a few weeks first.</p>';
+    hdr.innerHTML = ''; updateStats([]); return;
+  }
+
+  hdr.innerHTML = weeks.map(w => '<div class="trend-wk">' + weekShort(w) + '</div>').join('');
+  container.innerHTML = '';
+
+  SKILLS.forEach(s => {
+    const row = document.createElement('div'); row.className = 'trend-row';
+    const scores = weeks.map(w => data[w]?.sc?.[s.id] || 0);
+    const valid = scores.filter(v => v > 0);
+    const avg = valid.length ? (valid.reduce((a,b) => a+b, 0) / valid.length).toFixed(1) : '—';
+    const bars = scores.map(v =>
+      '<div class="trend-bar" style="background:' + (v ? barColor(v) : '#E2DDD6') + ';opacity:' + (v ? 1 : 0.4) + ';"></div>'
+    ).join('');
+    row.innerHTML = '<div class="trend-name">' + s.label + '</div><div class="trend-bars">' + bars + '</div><div class="trend-avg">' + avg + '</div>';
+    container.appendChild(row);
+  });
+
+  updateStats(weeks);
+}
+
+function updateStats(weeks) {
+  document.getElementById('stat-weeks').textContent = weeks.length;
+  if (!weeks.length) return;
+
+  const avgs = SKILLS.map(s => {
+    const scores = weeks.map(w => data[w]?.sc?.[s.id] || 0).filter(v => v > 0);
+    return { label: s.label, avg: scores.length ? scores.reduce((a,b)=>a+b,0)/scores.length : 0 };
+  }).filter(x => x.avg > 0);
+
+  if (!avgs.length) return;
+  avgs.sort((a,b) => b.avg - a.avg);
+  const best = avgs[0], focus = avgs[avgs.length - 1];
+  document.getElementById('stat-best').textContent = best.label;
+  document.getElementById('stat-best-avg').textContent = 'avg ' + best.avg.toFixed(1);
+  document.getElementById('stat-focus').textContent = focus.label;
+  document.getElementById('stat-focus-avg').textContent = 'avg ' + focus.avg.toFixed(1);
+}
+
+buildGrid();
+load();
+</script>
+</body>
+</html>
